@@ -1,0 +1,404 @@
+
+
+BEGIN AGENT PROMPT
+ROLE: You are an autonomous coding agent. Build a production-ready multi-tenant white-label Event Landing Pages platform (three vertical templates: Webinar, Workshop, Concert) using Node + React + TypeScript (Next.js app router) with Drizzle ORM connected to Neon (serverless Postgres). Backend endpoints must be serverless functions inside the Next.js app (/app/api or /pages/api depending on app router constraints). Prioritize typesafety, modularity, testability, and clear separation between tenant-public pages and tenant-admin dashboard.
+
+IMPORTANT NEW REQUIREMENT:
+- Create a root file `FEATURES_CHECKLIST.md` and populate it with a complete checklist of every feature, endpoint, UI screen, integration, migration, test, and doc item described below. Use Markdown GitHub task-list checkboxes. Update this file as you complete items and commit changes. Include sub-checklists for Webinar, Workshop, Concert, Admin, API, PWA, White-label, Dev-stubs, Tests/CI, and Docs.
+
+HIGH-LEVEL REQUIREMENTS:
+- Frontend: Next.js (App Router) + React + TypeScript (strict) + Tailwind CSS
+- ORM / Database: Drizzle ORM + Drizzle Kit for migrations + Neon (Neon serverless Postgres)
+- Hosting target: Replit for development; deployable to Vercel/Netlify/Cloudflare for production.
+- Payments: Stripe (with dev stub if key absent)
+- Email: SendGrid (with dev stub)
+- SMS: Twilio or local provider (with dev stub)
+- QR & ticketing support, calendar add, unique token per ticket
+- White-label / multi-tenant: per-tenant theming, custom domain guidance, remove-platform-branding toggle
+- Check-in PWA for gate staff (QR scanner + offline queue / sync)
+- CI: basic tests + GitHub Actions workflow
+
+CLI / INITIAL SCAFFOLD (run these commands in order in the shell):
+1. npx create-next-app@latest event-landing --typescript --app
+2. cd event-landing
+3. npm install tailwindcss postcss autoprefixer clsx zod react-hook-form axios swr zustand qrcode.react dayjs next-seo uuid bcryptjs jsonwebtoken js-cookie i18next react-i18next @types/js-cookie
+4. ### Drizzle + Neon packages
+   npm install drizzle-orm drizzle-kit @neondatabase/serverless drizzle-orm/neon-http drizzle-orm/pg-core
+5. ### PostgreSQL / driver helpers (dev/prod)
+   npm install pg ws bufferutil
+6. ### Payments/Comm packages
+   npm install stripe @stripe/stripe-js @stripe/react-stripe-js
+7. ### Email/SMS
+   npm install @sendgrid/mail twilio
+8. ### Dev/test tooling
+   npm install -D jest @testing-library/react @testing-library/jest-dom ts-jest eslint prettier eslint-config-prettier
+9. npx tailwindcss init -p
+
+PROJECT STRUCTURE (create files/folders exactly as below — agent must create stubs/real files and ensure FEATURES_CHECKLIST.md is present):
+- /app
+  - /[tenant]                     # dynamic public tenant route
+    - /webinar
+      - page.tsx
+    - /workshop
+      - page.tsx
+    - /concert
+      - page.tsx
+  - /api
+    - /v1
+      - register/route.ts
+      - payment-intent/route.ts
+      - webhook/route.ts
+      - ticket/[token]/route.ts
+      - send-reminder/route.ts
+      - analytics/route.ts
+      - checkin/route.ts
+      - auth/route.ts
+  - /admin
+    - /[tenant]
+      - page.tsx
+      - events/
+        - create/page.tsx
+        - [eventId]/edit/page.tsx
+      - settings/page.tsx
+- /components
+  - Hero.tsx, Speakers.tsx, Agenda.tsx, PricingTiers.tsx, TicketWidget.tsx, Countdown.tsx, FAQ.tsx, Footer.tsx, Header.tsx, StickyCTA.tsx, CheckoutModal.tsx, ThemeEditor.tsx
+- /lib
+  - drizzle.server.ts        # Drizzle + Neon connection + helper for server
+  - db.ts (export typed tables & query helpers)
+  - mail.ts (SendGrid wrapper + dev logger)
+  - sms.ts (Twilio wrapper + dev logger)
+  - stripe.ts (Stripe wrapper + dev stub)
+  - auth.ts (JWT helpers)
+  - qr.ts (QR generator util)
+  - tenant.ts (tenant resolver by host or param)
+  - migrations/               # drizzle-kit migrations output
+- /db
+  - schema.ts                # Drizzle table definitions
+- /scripts
+  - seed.ts                  # seed sample tenants and events
+  - migrate.ts               # run drizzle migrations locally against Neon or local Postgres
+- /public
+  - placeholder images, fonts
+- /tests
+  - api.test.ts, components.test.tsx
+- drizzle.config.ts
+- next.config.js, tailwind.config.js, postcss.config.js, jest.config.js, .eslintrc, tsconfig.json
+- README.md
+- FEATURES_CHECKLIST.md      # **REQUIRED** - tasks & features checklist (see details below)
+- .env.example
+
+DRIZZLE / NEON SETUP (exact approach)
+1. Install packages (see above).
+2. Create `drizzle.config.ts` in root:
+
+   ```ts
+   import 'dotenv/config';
+   import { defineConfig } from 'drizzle-kit';
+
+   export default defineConfig({
+     schema: './db/schema.ts',
+     out: './drizzle',
+     driver: 'pg',
+     dbCredentials: {
+       connectionString: process.env.DATABASE_URL ?? process.env.NEON_DATABASE_URL,
+     },
+   });
+````
+
+3. Create `lib/drizzle.server.ts`:
+
+   ```ts
+   import { neon } from '@neondatabase/serverless';
+   import { drizzle } from 'drizzle-orm/neon-http';
+   import 'dotenv/config';
+
+   const client = neon(process.env.DATABASE_URL!);
+   export const db = drizzle(client);
+   ```
+
+   * If running in an environment that requires websockets (neon-serverless), include Pool & ws as documented; add fallback notes in README.
+
+DRIZZLE SCHEMA (db/schema.ts) — high-level table definitions (use drizzle `pg-core`):
+
+* tenants table
+* events table
+* ticket\_types table
+* tickets table
+* transactions table
+* attendees table
+* admin\_users table
+* referrals table
+
+(Agent must create a schema.ts with `pgTable`, columns and types; include indexes for slug, token.)
+
+API SPEC (serverless routes in /app/api/v1) — implement with Next.js route handlers (route.ts):
+
+1. POST /api/v1/register
+
+   * Body: { tenantSlug, eventSlug, ticketTypeId, name, email, phone?, ref? }
+   * Validate with Zod.
+   * Behavior:
+
+     * Lookup tenant & event; check capacity and ticket availability.
+     * Create ticket row with status 'pending' and generate token UUID.
+     * If ticket type.isPaid === true -> create Stripe PaymentIntent (if STRIPE key present) and return { clientSecret, ticketId }
+
+       * If no STRIPE key, return a simulated clientSecret and mark transaction stub.
+     * If free ticket -> mark status 'issued', generate QR/QRCode data, send email via sendgrid (or write to /tmp/mail.log) and return success with ticket data.
+2. POST /api/v1/payment-intent
+
+   * Body: { ticketId }
+   * Creates/confirm PaymentIntent for the specified ticket and records Transaction in DB.
+3. POST /api/v1/webhook
+
+   * Accept Stripe webhook events; on payment\_intent.succeeded -> set ticket.status = 'issued', generate QR, send ticket email and calendar link.
+   * Webhook idempotency handling.
+4. GET /api/v1/ticket/\[token]
+
+   * Return ticket and attendee info for check-in; authorize only for tenant or gate staff if additional secret present.
+5. POST /api/v1/send-reminder
+
+   * Body: { eventId, when: '24h' | '1h' | 'custom' }
+   * Queue reminders; for dev, send immediately using mail.ts and sms.ts stubs.
+6. POST /api/v1/analytics
+
+   * Track funnel events (visit, register, purchase, checkin) and store aggregated counters in a lightweight table or external analytics stub.
+7. POST /api/v1/checkin
+
+   * Body: { token, gateId, operatorId }
+   * Validate ticket token, mark checked\_in\_at, increment stats, return attendee info; support offline sync marker for PWA.
+
+FRONTEND REQUIREMENTS (public landing)
+
+* Tenant resolver (lib/tenant.ts):
+
+  * Resolve tenant by hostname (req.headers.host) OR by `[tenant]` route param when testing.
+  * Load tenant theme & event data at server component root (use server components to fetch data with Drizzle).
+* Landing page per event:
+
+  * Hero with date/time (convert server event timezone to visitor timezone using dayjs-timezone), CTA, ticket tier UI.
+  * Ticket flow:
+
+    * Open CheckoutModal → collect minimal info → call /api/v1/register
+    * If paid -> integrate with Stripe Elements (if key exists) or simulate success in dev mode
+    * On success -> show ticket (QR image), button to download PDF or add to calendar
+  * Social share widget and referral link (?ref=CODE)
+  * Countdown module (live)
+  * Mobile-first: sticky bottom CTA for registration/purchase
+  * Accessibility: semantic HTML & aria attributes
+
+FRONTEND REQUIREMENTS (admin dashboard)
+
+* JWT-based admin auth with route protection (server & client).
+* Event create/edit wizard:
+
+  * Steps: Basic info -> Tickets -> Speakers/Artists -> Media/Assets -> Publish settings
+  * Theme editor: primary color, accent color, font family (select list), logo upload, toggle hidePlatformBranding
+  * Ticket management: list sold/pending, CSV export via server endpoint (streaming)
+* Check-in PWA (under /app/checkin or /checkin):
+
+  * Camera QR scanner using getUserMedia + jsQR (or simple input fallback)
+  * Offline queue: store check-in actions in IndexedDB/localStorage and sync when online
+  * Gate login with tenant + gate code
+* Admin pages should use server components to load data and client components for interactions
+
+WHITE-LABEL / MULTI-TENANCY IMPLEMENTATION NOTES
+
+* Tenants table stores theme JSON and domains array.
+* Resolve tenant by req.headers.host — if host matches tenant.domain use that tenant; otherwise accept route param for dev.
+* Theming: apply CSS variables (generated server-side) in the root HTML for tenant pages (`<html data-tenant="slug" style="--primary: #...">`).
+* Custom domains: admin shows step-by-step with CNAME target and DKIM/SPF sample values. Provide instructions only (actual DNS automation is out of MVP).
+* Email deliverability: allow per-tenant `from` override; advise creating SendGrid subaccounts or custom SMTP and document in README.
+
+ENV VARIABLES (document these — use these exact names):
+
+* DATABASE\_URL (Neon connection string)
+* NEXT\_PUBLIC\_BASE\_URL
+* SENDGRID\_API\_KEY
+* SENDGRID\_FROM\_EMAIL
+* TWILIO\_ACCOUNT\_SID
+* TWILIO\_AUTH\_TOKEN
+* TWILIO\_FROM\_NUMBER
+* STRIPE\_SECRET\_KEY
+* STRIPE\_WEBHOOK\_SECRET
+* JWT\_SECRET
+* SENTRY\_DSN (optional)
+* NODE\_ENV
+
+DEV FALLBACKS (mandatory)
+
+* If STRIPE keys missing -> create `devStripe` stub that simulates PaymentIntent & webhook flow and logs to /tmp/stripe.log
+* If SENDGRID missing -> write emails to /tmp/mail.log and expose a sample dev email viewer route `/dev/mailbox`
+* If TWILIO missing -> log SMS to console / /tmp/sms.log
+
+MIGRATIONS & SEED
+
+* Use drizzle-kit for migrations (drizzle.config.ts already created)
+* Create `scripts/migrate.ts` to run migrations and `scripts/seed.ts` to insert 3 sample tenants (webinar, workshop, concert) with at least one event each and ticket types.
+
+TESTS & CI
+
+* Add Jest + React Testing Library tests:
+
+  * API: test register free flow (mock db using sqlite or test Neon branch)
+  * Component: Hero renders headline and CTA
+* Add `.github/workflows/ci.yml` to run `npm ci`, `npm test`, `npm run build`
+
+README (required content)
+
+* Setup & run locally (`npm install`, set .env, `npm run dev`)
+* How to migrate and seed (npm run migrate, npm run seed)
+* How to configure Neon (link to Neon dashboard), how to set up SendGrid/Stripe/Twilio
+* How to enable custom domain (CNAME) and DKIM/SPF guidance
+* How to replace dev stubs with production keys
+* How to deploy to Vercel/Netlify (production notes re: environment variables)
+
+IMPLEMENTATION PRIORITY (what to build first)
+
+1. Scaffold Next.js + Tailwind + Drizzle + Neon connection + tenant resolver
+2. Implement db schema (db/schema.ts) + migration + seed (1 webinar sample)
+3. Build public webinar page + register API (free flow) + QR generation + email stub
+4. Add paid flow with Stripe stub/real depending on keys
+5. Build admin auth + event create/edit + theme editor
+6. Build workshop & concert UI-specific pages (capacity indicators, seating placeholder, VIP)
+7. Build check-in PWA
+8. Add reminders + analytics + referrals
+9. Tests + CI + README polish
+
+OUTPUT EXPECTED FROM AGENT (report after run):
+
+1. repo tree (top-level) created,
+2. show important files content (at least): db/schema.ts, lib/drizzle.server.ts, app/api/v1/register/route.ts, app/\[tenant]/webinar/page.tsx, scripts/seed.ts,
+3. instructions to run locally (exact npm commands),
+4. sample .env.example file content,
+5. ensure FEATURES\_CHECKLIST.md exists and is committed; return its initial content and then keep updating it as tasks are completed.
+
+ERROR HANDLING & NOTES:
+
+* Use Zod for input validation.
+* Add helpful TODO comments where third-party credentials or platform-specific manual steps are required.
+* All external integrations must gracefully fallback in dev.
+* Code must run in Replit dev constraints; if websockets or special binaries are required for neon, agent must document and fallback to `neon-http` driver.
+
+PERMISSION: You are authorized to create files, install packages, run the dev server, run migrations (if credentials available), seed data, run tests, and commit files into the Replit repo. If any secrets are not present, create clear dev stubs and annotate TODOs.
+
+END — proceed now and return:
+A) repo tree top-level,
+B) contents of 5 important files (db/schema.ts, lib/drizzle.server.ts, app/api/v1/register/route.ts, app/\[tenant]/webinar/page.tsx, scripts/seed.ts),
+C) exact commands to run locally,
+D) sample .env.example,
+E) initial content of FEATURES\_CHECKLIST.md (and update it as you finish items).
+
+If you encounter environment limitations, implement best-effort stubs and annotate clearly in code and README where production keys must be inserted.
+__________
+ROLE: You are Vibe Coding — an autonomous Replit coding agent. Focus: **implement the entire frontend UI** for the Event Landing Pages platform (Webinar, Workshop, Concert) and the Admin + Check-in UIs. Use **Next.js (App Router) + React + TypeScript + Tailwind CSS**. Work only on frontend/UI code and necessary client-side wiring to existing serverless API routes (/api/v1/*). Do not change backend DB schemas or server logic except to add safe client-side helpers/stubs or small serverless helper endpoints for dev preview (e.g., /dev/mailbox). Your job is to produce production-quality UI: accessible, responsive, typed, modular, and themeable (white-label).
+
+IMPORTANT — MUST DO:
+1. Implement UI for **all pages listed below** (public + admin + check-in). Each page must be fully client-interactive: forms, modals, validation, client-side state, calls to API routes (use fetch/axios). Use Zod on client for input validation. Use Tailwind utility classes and CSS variables for theming. Commit changes and update `FEATURES_CHECKLIST.md` checkboxes for UI items as you complete them.
+2. If an external key (Stripe/SendGrid/Twilio) is missing, implement a **dev-friendly simulated flow** (clear UI message showing simulated state) and keep code paths ready to swap to real providers.
+3. Every interactive element must have ARIA attributes and keyboard support. Mobile-first; ensure sticky CTA on mobile.
+4. Create reusable components in `/components` (Header, Footer, Hero, Speakers, Agenda, PricingTiers, TicketWidget, CheckoutModal, CheckoutForm, Countdown, FAQ, ThemeEditor, AdminTable, CSVExportButton, CheckinScanner) with full TypeScript props and unit tests where feasible.
+5. Admin UI pages must provide event create/edit wizard, ticket management table (with CSV export), theme editor (live preview), and a simple auth flow (JWT login stub calling /api/v1/auth).
+6. Check-in PWA page must include camera QR scanner (getUserMedia + jsQR or equivalent), offline queue via IndexedDB or localStorage, and operator login. Provide clear UX for “Sync when online”.
+7. Provide client-side routing & deep-linking for tenant pages: e.g., /[tenant]/webinar/{eventSlug}, /[tenant]/workshop/{eventSlug}, /[tenant]/concert/{eventSlug}.
+8. Unit test core components (Hero, TicketWidget, CheckoutForm) with React Testing Library + Jest. Add one integration test for the register flow mocking API.
+9. Update `FEATURES_CHECKLIST.md` by checking each UI item you implement (tick ✓). Commit frequently with clear messages.
+10. At completion, return a summary report (repo tree, major files created/edited, how to run dev, and any TODOs or missing secrets).
+
+PAGES & UI REQUIREMENTS (build all below)
+
+A. Public pages (per tenant + per event)
+- /[tenant]/webinar/[eventSlug]
+- /[tenant]/workshop/[eventSlug]
+- /[tenant]/concert/[eventSlug]
+
+For each public page implement:
+- Server component fetches tenant & event (Drizzle server import) and renders server-side meta (title, OG tags).
+- Client components:
+  - Hero: event title, subtitle, date/time (converted to visitor timezone), main CTA.
+  - Ticket tiers: show ticket types with price, availability, CTA ("Register" / "Buy Ticket").
+  - CheckoutModal / CheckoutForm: collects name, email, phone, ticketType (preselected) — validates with Zod; on submit calls POST /api/v1/register; handles free flow (shows ticket QR, download button, add-to-calendar) and paid flow (if STRIPE key present open Stripe Elements; else simulate success).
+  - Social share + referral: show share buttons and allow copying referral link; append ?ref=code.
+  - Countdown timer & urgency: seats left (calculate from capacity - sold; use API stub if needed), show badge when limited.
+  - Speakers & Agenda sections with responsive cards.
+  - FAQ accordion (accessible).
+  - Sticky CTA bar on mobile showing cheapest ticket + action button.
+  - Accessibility: all images have alt, forms labeled, focus management for modals.
+
+B. Admin Dashboard (per tenant)
+- Route: /admin/[tenant] (protected)
+- Pages:
+  - Login page (POST /api/v1/auth stub; store JWT in cookie)
+  - Dashboard: quick metrics (registrations today, revenue this month, next event)
+  - Events list: create/edit/delete
+  - Event Create/Edit wizard (steps: Basic info -> Tickets -> Speakers & Media -> Publish & Domain settings)
+    - Ticket manager with add/edit ticket-type rows, quantity, price, perks.
+  - Theme Editor: color picker (primary/accent), logo upload input (store URL), toggle platform branding; show live preview of public page using current settings (iframe or inline preview).
+  - Registrants list per event with search, filter (status), export CSV (calls server endpoint or client-side CSV creation).
+  - Reminders & notifications UI: schedule 24h/1h reminders and trigger test sends (calls /api/v1/send-reminder).
+  - Billing & settings: show connected payment provider status, domain mapping UI (display CNAME target & DKIM example).
+- Admin UI should be a polished CRUD app with responsive tables, modals for create/edit, confirmation dialogs, and accessible keyboard interactions.
+
+C. Check-in PWA (for gate staff)
+- Route: /checkin (and tenant-scoped: /checkin/[tenant]/[eventId])
+- Implement PWA manifest & service worker stub (next-pwa optional) to enable installable experience.
+- Camera QR scanner: use getUserMedia, process frames with jsQR (or simulate input fallback) and call POST /api/v1/checkin with token; if offline, push to local queue and show "Pending sync" list; on reconnect sync pending actions.
+- Provide "Gate login" with tenant + gate code input and fetch attendee list (for offline lookup).
+- UI for manual check-in (search by email or ticket token) and marking no-show/undo check-in.
+
+D. Shared components & theming
+- Implement design tokens using CSS variables; theme editor updates variables at runtime for preview.
+- All components must accept `className` and be composable.
+- Provide light/dark mode toggle (prefers-color-scheme aware).
+- Responsive grid / card layouts; mobile-first breakpoints.
+
+E. Forms, Validation & UX
+- Use React Hook Form + Zod resolver for forms.
+- Show inline validation errors, success toasts, and server errors.
+- Use optimistic UI for check-in and ticket issuance where appropriate (but reconcile with server on response).
+
+F. Payment flow UI
+- If STRIPE publishable key present (`NEXT_PUBLIC_STRIPE_KEY`), integrate Stripe Elements for card collection; create PaymentIntent via /api/v1/payment-intent endpoint.
+- If Stripe key missing, show "Simulate payment" mode: UI displays payment simulation and then shows success state and ticket issuance.
+
+G. Tests & CI for UI
+- Add Jest + RTL tests for:
+  - Hero renders event title & CTA
+  - CheckoutForm validates input & calls register API (mock fetch)
+  - Check-in scanner fallback input behavior
+- Add simple GitHub action step to run `npm test`.
+
+H. Accessibility & Performance
+- Run an automated check (axe-core or simple Lighthouse check if possible) locally and fix obvious ARIA issues.
+- Lazy-load images, use next/image for optimizing assets if available.
+
+CODE & COMMIT RULES FOR THE AGENT
+- Commit frequently and atomically (e.g., create components, then commit; implement page, commit).
+- Every commit that completes a UI checklist item must update `FEATURES_CHECKLIST.md` by checking that item.
+- Use descriptive commit messages (e.g., "ui: implement Hero + Countdown + CTA for webinar page").
+- At the end of the run, create a final commit "ui: complete frontend MVP - webinar/workshop/concert + admin + checkin" and ensure `FEATURES_CHECKLIST.md` reflects all UI items implemented (checked or noted TODO).
+
+DEV FALLBACKS & EXPOSED DEBUG ROUTES
+- Create /dev/mailbox page to show last 20 dev-sent emails (read /tmp/mail.log).
+- Create /dev/stripe-log page that shows /tmp/stripe.log if stripe key missing.
+- Expose /dev/simulate-payment endpoint that the UI uses in dev mode to simulate payment.
+
+DELIVERABLES & REPORT (agent must output these after finishing)
+1. Repo tree top-level (ls -R).
+2. Files created/modified list for UI work.
+3. `FEATURES_CHECKLIST.md` current content (with UI items checked).
+4. How to run frontend dev (exact commands) and how to run tests.
+5. Any missing secrets or TODOs to complete full production integration.
+
+RUN & CONTEXT
+- Assume the repo already contains backend stubs we worked on earlier (db schema, lib/drizzle.server.ts, API route stubs). Use those endpoints to integrate UI.
+- If an endpoint you call does not exist, create a lightweight client-side mock that uses the same shape and log a clear TODO to replace with real endpoint.
+- Keep code strictly TypeScript (no any), enable `strict` in tsconfig where possible.
+
+TIMEBOX & PRIORITY (deliver minimal polished UI quickly)
+- Priority order to implement: Public webinar page (full), Checkout flow (free + simulated paid), Admin event create/edit wizard (basic), Check-in PWA (scanner + offline queue), Workshop & Concert pages (full feature parity with webinar where applicable), Theme editor & CSV export.
+- If time/space limits occur, implement full webinar + checkout + admin event wizard + check-in PWA first, then finish workshop/concert pages.
+
+END — proceed now, implement the UI as described, commit changes, update FEATURES_CHECKLIST.md as you complete each UI item, and finally report back with the deliverables listed above.
+END AGENT PROMPT
+
