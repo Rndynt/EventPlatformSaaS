@@ -1,0 +1,153 @@
+7:59:37 PM: build-image version: 4a8ac839785702e700079d30b165ce05e5b74e43 (noble)
+7:59:37 PM: buildbot version: ea492e86968abb8ab1c6f00e7c4b5466855f8c43
+7:59:37 PM: Fetching cached dependencies
+7:59:37 PM: Failed to fetch cache, continuing with build
+7:59:37 PM: Starting to prepare the repo for build
+7:59:37 PM: No cached dependencies found. Cloning fresh repo
+7:59:37 PM: git clone --filter=blob:none https://github.com/Rndynt/EventPlatformSaaS
+7:59:37 PM: Preparing Git Reference refs/heads/main
+7:59:44 PM: Starting to install dependencies
+7:59:45 PM: Downloading and installing node v18.20.8...
+7:59:45 PM: Downloading https://nodejs.org/dist/v18.20.8/node-v18.20.8-linux-x64.tar.xz...
+7:59:46 PM: Computing checksum with sha256sum
+7:59:46 PM: Checksums matched!
+7:59:54 PM: Now using node v18.20.8 (npm v10.8.2)
+7:59:55 PM: Enabling Node.js Corepack
+7:59:55 PM: Started restoring cached build plugins
+7:59:55 PM: Finished restoring cached build plugins
+7:59:55 PM: Started restoring cached corepack dependencies
+7:59:55 PM: Finished restoring cached corepack dependencies
+7:59:55 PM: No npm workspaces detected
+7:59:55 PM: Started restoring cached node modules
+7:59:55 PM: Finished restoring cached node modules
+7:59:55 PM: Installing npm packages using npm version 10.8.2
+8:00:00 PM: npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+8:00:00 PM: npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+8:00:08 PM: added 802 packages in 13s
+8:00:08 PM: npm packages installed
+8:00:08 PM: Successfully installed dependencies
+8:00:08 PM: Starting build script
+8:00:09 PM: Detected 1 framework(s)
+8:00:09 PM: "vite" at version "5.4.19"
+8:00:09 PM: Section completed: initializing
+8:00:10 PM: ​
+8:00:10 PM: Netlify Build                                                 
+8:00:10 PM: ────────────────────────────────────────────────────────────────
+8:00:10 PM: ​
+8:00:10 PM: ❯ Version
+8:00:10 PM:   @netlify/build 35.1.6
+8:00:10 PM: ​
+8:00:10 PM: ❯ Flags
+8:00:10 PM:   accountId: 6866e1b0d9019f32fa5343d0
+8:00:10 PM:   baseRelDir: true
+8:00:10 PM:   buildId: 68c80db68009173ff53d571e
+8:00:10 PM:   deployId: 68c80db68009173ff53d5720
+8:00:10 PM: ​
+8:00:10 PM: ❯ Current directory
+8:00:10 PM:   /opt/build/repo
+8:00:10 PM: ​
+8:00:10 PM: ❯ Config file
+8:00:10 PM:   /opt/build/repo/netlify.toml
+8:00:10 PM: ​
+8:00:10 PM: ❯ Context
+8:00:10 PM:   production
+8:00:10 PM: ​
+8:00:10 PM: ❯ Installing extensions
+8:00:10 PM:    - neon
+8:00:45 PM: Failed during stage 'building site': Build script returned non-zero exit code: 2 (https://ntl.fyi/exit-code-2)
+8:00:38 PM: ​
+8:00:38 PM: ❯ Loading extensions
+8:00:38 PM:    - neon
+8:00:39 PM: ​
+8:00:39 PM: Build command from Netlify app                                
+8:00:39 PM: ────────────────────────────────────────────────────────────────
+8:00:39 PM: ​
+8:00:39 PM: $ npm run build
+8:00:39 PM: > rest-express@1.0.0 build
+8:00:39 PM: > vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+8:00:39 PM: vite v5.4.19 building for production...
+8:00:39 PM: transforming...
+8:00:40 PM: Browserslist: browsers data (caniuse-lite) is 11 months old. Please run:
+8:00:40 PM:   npx update-browserslist-db@latest
+8:00:40 PM:   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+8:00:42 PM: ✓ 1660 modules transformed.
+8:00:42 PM: rendering chunks...
+8:00:42 PM: computing gzip size...
+8:00:42 PM: ../dist/public/index.html                   2.20 kB │ gzip:  0.86 kB
+8:00:42 PM: ../dist/public/assets/index-D1tSwSRy.css   69.43 kB │ gzip: 12.05 kB
+8:00:42 PM: ../dist/public/assets/index-Xo5W09El.js   259.73 kB │ gzip: 84.80 kB
+8:00:42 PM: ✓ built in 3.42s
+8:00:43 PM:   dist/index.js  4.8kb
+8:00:43 PM: ⚡ Done in 12ms
+8:00:43 PM: ​
+8:00:43 PM: (build.command completed in 3.9s)
+8:00:43 PM: ​
+8:00:43 PM: Functions bundling                                            
+8:00:43 PM: ────────────────────────────────────────────────────────────────
+8:00:43 PM: ​
+8:00:43 PM: Packaging Functions from netlify/functions directory:
+8:00:43 PM:  - analytics.ts
+8:00:43 PM:  - auth.ts
+8:00:43 PM:  - checkin.ts
+8:00:43 PM:  - payment-intent.ts
+8:00:43 PM:  - register.ts
+8:00:43 PM:  - send-reminder.ts
+8:00:43 PM:  - ticket.ts
+8:00:43 PM:  - verify-auth.ts
+8:00:43 PM:  - webhook.ts
+8:00:43 PM: ​
+8:00:44 PM: ​
+8:00:44 PM: (Functions bundling completed in 1.1s)
+8:00:44 PM: ​
+8:00:44 PM: Deploy site                                                   
+8:00:44 PM: ────────────────────────────────────────────────────────────────
+8:00:44 PM: ​
+8:00:44 PM: Section completed: deploying
+8:00:44 PM: ​
+8:00:44 PM: Configuration error                                           
+8:00:44 PM: ────────────────────────────────────────────────────────────────
+8:00:44 PM: ​
+8:00:44 PM:   Error message
+8:00:44 PM:   Deploy did not succeed: Deploy directory 'client/dist' does not exist
+8:00:44 PM: ​
+8:00:44 PM:   Resolved config
+8:00:44 PM:   build:
+8:00:44 PM:     command: npm run build
+8:00:44 PM:     commandOrigin: ui
+8:00:44 PM:     environment:
+8:00:44 PM:       - NODE_VERSION
+8:00:44 PM:     publish: /opt/build/repo/client/dist
+8:00:44 PM:     publishOrigin: config
+8:00:44 PM:   functionsDirectory: /opt/build/repo/netlify/functions
+8:00:44 PM:   redirects:
+8:00:44 PM:     - from: /api/v1/register
+8:00:44 PM:       status: 200
+8:00:44 PM:       to: /.netlify/functions/register
+8:00:44 PM:     - from: /api/v1/auth
+8:00:44 PM:       status: 200
+8:00:44 PM:       to: /.netlify/functions/auth
+8:00:44 PM:     - from: /api/v1/webhook
+8:00:44 PM:       status: 200
+8:00:44 PM:       to: /.netlify/functions/webhook
+8:00:44 PM:     - from: /api/v1/payment-intent
+8:00:44 PM:       status: 200
+8:00:44 PM:       to: /.netlify/functions/payment-intent
+8:00:44 PM:     - from: /api/v1/ticket/*
+      status: 200
+      to: /.netlify/functions/ticket/:splat
+    - from: /api/v1/checkin
+      status: 200
+      to: /.netlify/functions/checkin
+    - from: /api/v1/analytics
+      status: 200
+      to: /.netlify/functions/analytics
+    - from: /api/v1/send-reminder
+      status: 200
+      to: /.netlify/functions/send-reminder
+    - from: /*
+      status: 200
+      to: /index.html
+  redirectsOrigin: config
+8:00:44 PM: Build failed due to a user error: Build script returned non-zero exit code: 2
+8:00:44 PM: Failing build: Failed to build site
+8:00:45 PM: Finished processing build request in 1m8.02s
