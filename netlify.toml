@@ -1,0 +1,52 @@
+[build]
+  functions = "netlify/functions"
+  publish = "client/dist"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+[[redirects]]
+  from = "/api/v1/register"
+  to = "/.netlify/functions/register"
+  status = 200
+
+[[redirects]]
+  from = "/api/v1/auth"
+  to = "/.netlify/functions/auth"
+  status = 200
+
+[[redirects]]
+  from = "/api/v1/webhook"
+  to = "/.netlify/functions/webhook"
+  status = 200
+
+[[redirects]]
+  from = "/api/v1/payment-intent"
+  to = "/.netlify/functions/payment-intent"
+  status = 200
+
+[[redirects]]
+  from = "/api/v1/ticket/*"
+  to = "/.netlify/functions/ticket/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/api/v1/checkin"
+  to = "/.netlify/functions/checkin"
+  status = 200
+
+[[redirects]]
+  from = "/api/v1/analytics"
+  to = "/.netlify/functions/analytics"
+  status = 200
+
+[[redirects]]
+  from = "/api/v1/send-reminder"
+  to = "/.netlify/functions/send-reminder"
+  status = 200
+
+# Serve all other routes through the main app
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

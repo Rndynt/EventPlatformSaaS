@@ -1,6 +1,6 @@
 import { headers } from 'next/headers';
 import { db } from './drizzle.server';
-import { tenants, type Tenant } from '@/shared/schema';
+import { tenants, type Tenant } from '../shared/schema';
 import { eq } from 'drizzle-orm';
 
 export async function getTenantBySlug(slug: string): Promise<Tenant | null> {
