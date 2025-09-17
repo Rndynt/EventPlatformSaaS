@@ -244,7 +244,7 @@ async function seed() {
     console.log('✅ Created events:', demoEvents.map(e => e.title));
 
     // Create ticket types for each event
-    const ticketTypeData = [];
+    const ticketTypeData: any[] = [];
 
     // Webinar tickets (free and paid)
     ticketTypeData.push(
@@ -356,16 +356,15 @@ async function seed() {
   }
 }
 
-if (require.main === module) {
-  seed()
-    .then(() => {
-      console.log('✅ Seeding completed');
-      process.exit(0);
-    })
-    .catch((error) => {
-      console.error('❌ Seeding failed:', error);
-      process.exit(1);
-    });
-}
+// Auto-run if this is the main module
+seed()
+  .then(() => {
+    console.log('✅ Seeding completed');
+    process.exit(0);
+  })
+  .catch((error) => {
+    console.error('❌ Seeding failed:', error);
+    process.exit(1);
+  });
 
 export { seed };
