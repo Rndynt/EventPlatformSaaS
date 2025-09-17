@@ -1,5 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
+import cookieParser from 'cookie-parser';
+// Using HTTP-only cookies and proper headers for CSRF protection instead of deprecated csurf
 import { z } from 'zod';
 import { db } from '../lib/db';
 import { adminUsers, tenants, events, ticketTypes, attendees, tickets, transactions } from '../shared/schema';
@@ -21,7 +23,7 @@ const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
-  tenantSlug: z.string().optional(),
+  tenantSlug: z.string().min(1, 'Tenant slug is required'),
 });
 
 const registerSchema = z.object({
@@ -86,6 +88,77 @@ function extractTokenFromHeader(req: Request): string | null {
   return null;
 }
 
+// Auth middleware
+interface AuthenticatedRequest extends Request {
+  user?: {
+    userId: string;
+    tenantId: string;
+    role: string;
+    email: string;
+  };
+}
+
+function extractToken(req: Request): string | null {
+  // Try cookie first
+  const cookieToken = req.cookies['auth-token'];
+  if (cookieToken) {
+    return cookieToken;
+  }
+  // Fall back to Authorization header
+  return extractTokenFromHeader(req);
+}
+
+function requireAuth(req: AuthenticatedRequest, res: Response, next: any) {
+  const token = extractToken(req);
+  
+  if (!token) {
+    return res.status(401).json({ error: 'No authentication token' });
+  }
+
+  const payload = verifyJWT(token);
+  if (!payload) {
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
+
+  req.user = {
+    userId: payload.userId,
+    tenantId: payload.tenantId,
+    role: payload.role,
+    email: payload.email,
+  };
+  
+  next();
+}
+
+// Enhanced auth middleware that also validates tenant isolation
+function requireAuthWithTenant(req: AuthenticatedRequest, res: Response, next: any) {
+  requireAuth(req, res, async (err: any) => {
+    if (err) return next(err);
+    
+    try {
+      // Verify user is still active and belongs to the correct tenant
+      const [user] = await db
+        .select()
+        .from(adminUsers)
+        .where(and(
+          eq(adminUsers.id, req.user!.userId),
+          eq(adminUsers.tenantId, req.user!.tenantId),
+          eq(adminUsers.isActive, true)
+        ))
+        .limit(1);
+      
+      if (!user) {
+        return res.status(401).json({ error: 'User not found or inactive' });
+      }
+      
+      next();
+    } catch (error) {
+      console.error('Tenant validation error:', error);
+      return res.status(500).json({ error: 'Authentication validation failed' });
+    }
+  });
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Basic health check route
   app.get("/api/health", (req, res) => {
@@ -98,24 +171,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { email, password, tenantSlug } = loginSchema.parse(req.body);
 
-      // Find admin user
-      let adminQuery;
-      if (tenantSlug) {
-        adminQuery = db
-          .select()
-          .from(adminUsers)
-          .innerJoin(tenants, eq(adminUsers.tenantId, tenants.id))
-          .where(and(
-            eq(adminUsers.email, email),
-            eq(tenants.slug, tenantSlug)
-          ));
-      } else {
-        adminQuery = db
-          .select()
-          .from(adminUsers)
-          .innerJoin(tenants, eq(adminUsers.tenantId, tenants.id))
-          .where(eq(adminUsers.email, email));
-      }
+      // Find admin user (tenantSlug is now required)
+      const adminQuery = db
+        .select()
+        .from(adminUsers)
+        .innerJoin(tenants, eq(adminUsers.tenantId, tenants.id))
+        .where(and(
+          eq(adminUsers.email, email),
+          eq(tenants.slug, tenantSlug),
+          eq(adminUsers.isActive, true)
+        ));
 
       const [adminData] = await adminQuery.limit(1);
 
@@ -144,6 +209,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email: adminData.admin_users.email,
       });
 
+      // Set HTTP-only cookie
+      res.cookie('auth-token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+        path: '/',
+      });
+
       res.json({
         success: true,
         user: {
@@ -157,7 +231,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             name: adminData.tenants.name,
           },
         },
-        token,
+        // JWT token is set in HTTP-only cookie for security
       });
     } catch (error) {
       console.error('Login error:', error);
@@ -170,7 +244,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // PUT /api/v1/auth - Register new admin user
+  // PUT /api/v1/auth - Register new admin user (restricted)
   app.put("/api/v1/auth", async (req: Request, res: Response) => {
     try {
       const { email, password, name, tenantSlug, role } = registerSchema.parse(req.body);
@@ -200,6 +274,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(409).json({ error: 'User already exists for this tenant' });
       }
 
+      // Check if this tenant already has admin users
+      const [existingAdminCount] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(adminUsers)
+        .where(eq(adminUsers.tenantId, tenant.id))
+        .limit(1);
+
+      const hasExistingAdmins = existingAdminCount && Number(existingAdminCount.count) > 0;
+
+      // If tenant has existing admins, require authentication
+      if (hasExistingAdmins) {
+        const token = extractToken(req);
+        
+        if (!token) {
+          return res.status(401).json({ error: 'Authentication required to create additional admin users' });
+        }
+
+        const payload = verifyJWT(token);
+        if (!payload) {
+          return res.status(401).json({ error: 'Invalid or expired token' });
+        }
+
+        // Verify requesting user belongs to same tenant
+        if (payload.tenantId !== tenant.id) {
+          return res.status(403).json({ error: 'Cannot create admin users for different tenant' });
+        }
+
+        // Verify requesting user has admin role
+        if (payload.role !== 'admin') {
+          return res.status(403).json({ error: 'Only admin users can create new admin accounts' });
+        }
+
+        // Verify requesting user is active
+        const [requestingUser] = await db
+          .select()
+          .from(adminUsers)
+          .where(and(
+            eq(adminUsers.id, payload.userId),
+            eq(adminUsers.isActive, true)
+          ))
+          .limit(1);
+
+        if (!requestingUser) {
+          return res.status(401).json({ error: 'Requesting user not found or inactive' });
+        }
+      }
+
       // Hash password
       const hashedPassword = await hashPassword(password);
 
@@ -223,6 +344,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email: newUser.email,
       });
 
+      // Set HTTP-only cookie
+      res.cookie('auth-token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+        path: '/',
+      });
+
       res.status(201).json({
         success: true,
         user: {
@@ -236,7 +366,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             name: tenant.name,
           },
         },
-        token,
+        // JWT token is set in HTTP-only cookie for security
       });
     } catch (error) {
       console.error('Registration error:', error);
@@ -246,6 +376,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // GET /api/v1/auth - Verify current user
+  app.get("/api/v1/auth", async (req: Request, res: Response) => {
+    try {
+      // Try to get token from cookie first, then Authorization header
+      const token = extractToken(req);
+      
+      if (!token) {
+        return res.status(401).json({ error: 'No authentication token' });
+      }
+
+      // Verify JWT
+      const payload = verifyJWT(token);
+      
+      if (!payload) {
+        return res.status(401).json({ error: 'Invalid or expired token' });
+      }
+
+      // Get current user data
+      const [adminData] = await db
+        .select()
+        .from(adminUsers)
+        .innerJoin(tenants, eq(adminUsers.tenantId, tenants.id))
+        .where(
+          and(
+            eq(adminUsers.id, payload.userId),
+            eq(adminUsers.isActive, true)
+          )
+        )
+        .limit(1);
+
+      if (!adminData) {
+        return res.status(401).json({ error: 'User not found or inactive' });
+      }
+
+      res.json({
+        success: true,
+        user: {
+          id: adminData.admin_users.id,
+          email: adminData.admin_users.email,
+          name: adminData.admin_users.name,
+          role: adminData.admin_users.role,
+          tenant: {
+            id: adminData.tenants.id,
+            slug: adminData.tenants.slug,
+            name: adminData.tenants.name,
+          },
+        },
+      });
+    } catch (error) {
+      console.error('Auth verification error:', error);
+      res.status(401).json({ error: 'Authentication failed' });
+    }
+  });
+
+  // DELETE /api/v1/auth - Logout
+  app.delete("/api/v1/auth", (req: Request, res: Response) => {
+    try {
+      // Clear the HTTP-only cookie with same options as when set
+      res.clearCookie('auth-token', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        path: '/'
+      });
+      
+      res.json({
+        success: true,
+        message: 'Logged out successfully',
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+      res.status(500).json({ error: 'Logout failed' });
     }
   });
 
@@ -411,21 +616,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ANALYTICS ROUTES
-  // POST /api/v1/analytics - Get analytics data
-  app.post("/api/v1/analytics", async (req: Request, res: Response) => {
+  // POST /api/v1/analytics - Get analytics data (protected)
+  app.post("/api/v1/analytics", requireAuthWithTenant, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { eventId, tenantId, action, startDate, endDate } = analyticsSchema.parse(req.body);
 
       if (eventId) {
-        // Get event-specific analytics
+        // Get event-specific analytics with tenant scoping
         const [event] = await db
           .select()
           .from(events)
-          .where(eq(events.id, eventId))
+          .where(and(
+            eq(events.id, eventId),
+            eq(events.tenantId, req.user!.tenantId)
+          ))
           .limit(1);
 
         if (!event) {
-          return res.status(404).json({ error: 'Event not found' });
+          return res.status(404).json({ error: 'Event not found or access denied' });
         }
 
         // Get ticket statistics
@@ -682,20 +890,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // SEND REMINDER ROUTES
-  // POST /api/v1/send-reminder - Send reminder to attendees
-  app.post("/api/v1/send-reminder", async (req: Request, res: Response) => {
+  // POST /api/v1/send-reminder - Send reminder to attendees (protected)
+  app.post("/api/v1/send-reminder", requireAuthWithTenant, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { eventId, when, customMessage } = reminderSchema.parse(req.body);
 
-      // Find event
+      // Find event with tenant scoping
       const [event] = await db
         .select()
         .from(events)
-        .where(eq(events.id, eventId))
+        .where(and(
+          eq(events.id, eventId),
+          eq(events.tenantId, req.user!.tenantId)
+        ))
         .limit(1);
 
       if (!event) {
-        return res.status(404).json({ error: 'Event not found' });
+        return res.status(404).json({ error: 'Event not found or access denied' });
       }
 
       // Get all issued tickets for this event
