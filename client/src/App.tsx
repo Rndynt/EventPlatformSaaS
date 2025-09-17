@@ -3,7 +3,10 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider } from "@/hooks/use-auth";
 import NotFound from "@/pages/not-found";
+import LoginPage from "@/pages/login";
+import AdminDashboard from "@/pages/admin";
 
 function Home() {
   return (
@@ -36,9 +39,27 @@ function Home() {
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
               Multi-Tenant Event Management Platform
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-8">
               Kelola berbagai jenis event seperti konser, webinar, dan workshop dengan sistem multi-tenant yang powerful.
             </p>
+            
+            {/* Primary Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
+              <a 
+                href="/login" 
+                className="inline-flex items-center justify-center px-8 py-4 text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-lg transition-colors duration-200 min-w-[200px]"
+                data-testid="button-login-home"
+              >
+                🔐 Admin Login
+              </a>
+              <a 
+                href="/admin" 
+                className="inline-flex items-center justify-center px-8 py-4 text-lg font-medium text-blue-600 bg-white border-2 border-blue-600 hover:bg-blue-50 rounded-lg shadow-lg transition-colors duration-200 min-w-[200px]"
+                data-testid="button-dashboard-home"
+              >
+                📊 Dashboard
+              </a>
+            </div>
           </div>
 
           {/* Feature Cards */}
@@ -76,19 +97,19 @@ function Home() {
 
           {/* Quick Actions */}
           <div className="bg-white rounded-lg shadow-sm border p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Platform Tools</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <a href="/admin" className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
-                Admin Dashboard
+              <a href="/checkin" className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50" data-testid="link-checkin">
+                📱 Event Check-in
               </a>
-              <a href="/checkin" className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                Event Check-in
+              <a href="/dev/mailbox" className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50" data-testid="link-mailbox">
+                📧 Dev Mailbox
               </a>
-              <a href="/dev/mailbox" className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                Dev Mailbox
+              <a href="/api/health" className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50" data-testid="link-health">
+                🏥 API Health
               </a>
-              <a href="/api/health" className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                API Health
+              <a href="/login" className="inline-flex items-center justify-center px-4 py-2 border border-blue-300 rounded-md shadow-sm text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100" data-testid="link-login">
+                🔑 Admin Access
               </a>
             </div>
           </div>
@@ -102,6 +123,8 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/login" component={LoginPage} />
+      <Route path="/admin" component={AdminDashboard} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -110,10 +133,12 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Router />
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Router />
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
