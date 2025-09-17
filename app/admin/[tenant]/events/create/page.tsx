@@ -3,13 +3,14 @@ import { resolveTenant } from '@/lib/tenant';
 import { EventCreateForm } from '@/components/EventCreateForm';
 
 interface Props {
-  params: {
+  params: Promise<{
     tenant: string;
-  };
+  }>;
 }
 
 export default async function CreateEventPage({ params }: Props) {
-  const tenant = await resolveTenant(params.tenant);
+  const resolvedParams = await params;
+  const tenant = await resolveTenant(resolvedParams.tenant);
   
   if (!tenant) {
     notFound();
@@ -32,7 +33,8 @@ export default async function CreateEventPage({ params }: Props) {
 }
 
 export async function generateMetadata({ params }: Props) {
-  const tenant = await resolveTenant(params.tenant);
+  const resolvedParams = await params;
+  const tenant = await resolveTenant(resolvedParams.tenant);
   
   return {
     title: tenant ? `Create Event - ${tenant.name}` : 'Create Event',

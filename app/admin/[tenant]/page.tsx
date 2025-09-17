@@ -3,13 +3,14 @@ import { resolveTenant } from '@/lib/tenant';
 import { AdminDashboard } from '@/components/AdminDashboard';
 
 interface Props {
-  params: {
+  params: Promise<{
     tenant: string;
-  };
+  }>;
 }
 
 export default async function AdminTenantPage({ params }: Props) {
-  const tenant = await resolveTenant(params.tenant);
+  const resolvedParams = await params;
+  const tenant = await resolveTenant(resolvedParams.tenant);
   
   if (!tenant) {
     notFound();
@@ -19,7 +20,8 @@ export default async function AdminTenantPage({ params }: Props) {
 }
 
 export async function generateMetadata({ params }: Props) {
-  const tenant = await resolveTenant(params.tenant);
+  const resolvedParams = await params;
+  const tenant = await resolveTenant(resolvedParams.tenant);
   
   if (!tenant) {
     return {

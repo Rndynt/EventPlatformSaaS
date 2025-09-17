@@ -14,14 +14,15 @@ import { StickyCTA } from '@/components/StickyCTA';
 import { CheckoutModal } from '@/components/CheckoutModal';
 
 interface Props {
-  params: {
+  params: Promise<{
     tenant: string;
     eventSlug: string;
-  };
+  }>;
 }
 
 export default async function WebinarPage({ params }: Props) {
-  const tenant = await resolveTenant(params.tenant);
+  const resolvedParams = await params;
+  const tenant = await resolveTenant(resolvedParams.tenant);
   
   if (!tenant) {
     notFound();
@@ -33,7 +34,7 @@ export default async function WebinarPage({ params }: Props) {
     .where(
       and(
         eq(events.tenantId, tenant.id),
-        eq(events.slug, params.eventSlug),
+        eq(events.slug, resolvedParams.eventSlug),
         eq(events.type, 'webinar')
       )
     )
@@ -96,7 +97,8 @@ export default async function WebinarPage({ params }: Props) {
 }
 
 export async function generateMetadata({ params }: Props) {
-  const tenant = await resolveTenant(params.tenant);
+  const resolvedParams = await params;
+  const tenant = await resolveTenant(resolvedParams.tenant);
   
   if (!tenant) {
     return {
@@ -110,7 +112,7 @@ export async function generateMetadata({ params }: Props) {
     .where(
       and(
         eq(events.tenantId, tenant.id),
-        eq(events.slug, params.eventSlug),
+        eq(events.slug, resolvedParams.eventSlug),
         eq(events.type, 'webinar')
       )
     )

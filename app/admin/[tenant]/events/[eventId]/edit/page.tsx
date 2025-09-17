@@ -6,14 +6,15 @@ import { resolveTenant } from '@/lib/tenant';
 import { EventEditForm } from '@/components/EventEditForm';
 
 interface Props {
-  params: {
+  params: Promise<{
     tenant: string;
     eventId: string;
-  };
+  }>;
 }
 
 export default async function EditEventPage({ params }: Props) {
-  const tenant = await resolveTenant(params.tenant);
+  const resolvedParams = await params;
+  const tenant = await resolveTenant(resolvedParams.tenant);
   
   if (!tenant) {
     notFound();
@@ -24,7 +25,7 @@ export default async function EditEventPage({ params }: Props) {
     .from(events)
     .where(
       and(
-        eq(events.id, params.eventId),
+        eq(events.id, resolvedParams.eventId),
         eq(events.tenantId, tenant.id)
       )
     )
@@ -67,7 +68,7 @@ export async function generateMetadata({ params }: Props) {
     .from(events)
     .where(
       and(
-        eq(events.id, params.eventId),
+        eq(events.id, resolvedParams.eventId),
         eq(events.tenantId, tenant?.id || '')
       )
     )
