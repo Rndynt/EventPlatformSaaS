@@ -12,7 +12,7 @@ import { createPaymentIntent } from '../lib/stripe';
 import Stripe from 'stripe';
 
 const stripe = process.env.STRIPE_SECRET_KEY 
-  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-06-20' })
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2025-07-30.basil' })
   : null;
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -99,14 +99,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { email, password, tenantSlug } = loginSchema.parse(req.body);
 
       // Find admin user
-      let adminQuery = db
-        .select()
-        .from(adminUsers)
-        .innerJoin(tenants, eq(adminUsers.tenantId, tenants.id))
-        .where(eq(adminUsers.email, email));
-
+      let adminQuery;
       if (tenantSlug) {
-        adminQuery = adminQuery.where(eq(tenants.slug, tenantSlug));
+        adminQuery = db
+          .select()
+          .from(adminUsers)
+          .innerJoin(tenants, eq(adminUsers.tenantId, tenants.id))
+          .where(and(
+            eq(adminUsers.email, email),
+            eq(tenants.slug, tenantSlug)
+          ));
+      } else {
+        adminQuery = db
+          .select()
+          .from(adminUsers)
+          .innerJoin(tenants, eq(adminUsers.tenantId, tenants.id))
+          .where(eq(adminUsers.email, email));
       }
 
       const [adminData] = await adminQuery.limit(1);
@@ -132,7 +140,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const token = generateJWT({
         userId: adminData.admin_users.id,
         tenantId: adminData.admin_users.tenantId,
-        role: adminData.admin_users.role,
+        role: adminData.admin_users.role as string,
         email: adminData.admin_users.email,
       });
 
@@ -211,7 +219,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const token = generateJWT({
         userId: newUser.id,
         tenantId: newUser.tenantId,
-        role: newUser.role,
+        role: newUser.role as string,
         email: newUser.email,
       });
 
@@ -265,7 +273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Check capacity
-      if (event.ticket_types.quantity && event.ticket_types.quantitySold >= event.ticket_types.quantity) {
+      if (event.ticket_types.quantity && (event.ticket_types.quantitySold ?? 0) >= event.ticket_types.quantity) {
         return res.status(400).json({ error: 'Ticket type is sold out' });
       }
 
@@ -305,12 +313,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (event.ticket_types.isPaid) {
         // Create payment intent for paid tickets
-        const amount = Math.round(parseFloat(event.ticket_types.price) * 100); // Convert to cents
+        const amount = Math.round(parseFloat(event.ticket_types.price ?? '0') * 100); // Convert to cents
         
         try {
           const clientSecret = await createPaymentIntent({
             amount,
-            currency: event.ticket_types.currency.toLowerCase(),
+            currency: (event.ticket_types.currency ?? 'usd').toLowerCase(),
             metadata: {
               ticketId: ticket.id,
               eventId: event.events.id,
@@ -321,8 +329,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Create transaction record
           await db.insert(transactions).values({
             ticketId: ticket.id,
-            amount: event.ticket_types.price,
-            currency: event.ticket_types.currency,
+            amount: event.ticket_types.price ?? '0',
+            currency: event.ticket_types.currency ?? 'USD',
             status: 'pending',
             stripePaymentIntentId: clientSecret.startsWith('pi_') ? clientSecret : undefined,
           });
@@ -332,8 +340,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ticketId: ticket.id,
             clientSecret,
             requiresPayment: true,
-            amount: parseFloat(event.ticket_types.price),
-            currency: event.ticket_types.currency,
+            amount: parseFloat(event.ticket_types.price ?? '0'),
+            currency: event.ticket_types.currency ?? 'USD',
           });
         } catch (paymentError) {
           console.error('Payment intent creation failed:', paymentError);
@@ -356,7 +364,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Update ticket type quantity
         await db
           .update(ticketTypes)
-          .set({ quantitySold: event.ticket_types.quantitySold + 1 })
+          .set({ quantitySold: (event.ticket_types.quantitySold ?? 0) + 1 })
           .where(eq(ticketTypes.id, validatedData.ticketTypeId));
 
         // Send ticket email
@@ -516,7 +524,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ 
           error: 'Ticket is not issued or is invalid',
           status: ticketData.tickets.status,
-          details: getStatusMessage(ticketData.tickets.status)
+          details: getStatusMessage(ticketData.tickets.status ?? 'pending')
         });
       }
 
@@ -642,7 +650,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!clientSecret) {
         clientSecret = await createPaymentIntent({
           amount,
-          currency: transaction.currency.toLowerCase(),
+          currency: (transaction.currency ?? 'usd').toLowerCase(),
           metadata: {
             ticketId: ticket.id,
             transactionId: transaction.id,
@@ -961,7 +969,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Update ticket type quantity
           await db
             .update(ticketTypes)
-            .set({ quantitySold: ticketData.ticket_types.quantitySold + 1 })
+            .set({ quantitySold: (ticketData.ticket_types.quantitySold ?? 0) + 1 })
             .where(eq(ticketTypes.id, ticketData.tickets.ticketTypeId));
 
           // Send ticket email

@@ -119,6 +119,7 @@ export const tickets = pgTable("tickets", {
   status: varchar("status", { length: 50 }).default("pending"), // pending, issued, used, cancelled
   qrCode: text("qr_code"),
   checkedInAt: timestamp("checked_in_at"),
+  metadata: jsonb("metadata").$type<Record<string, any>>().default({}),
   createdAt: timestamp("created_at").defaultNow()
 });
 
