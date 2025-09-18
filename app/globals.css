@@ -3,42 +3,59 @@
 @tailwind utilities;
 
 :root {
-  --primary: hsl(243.8863, 88.2845%, 53.1373%);
-  --secondary: hsl(328.4894, 75.2000%, 50.9804%);
-  --accent: hsl(159.7826, 100%, 36.0784%);
   --background: hsl(0, 0%, 100%);
-  --foreground: hsl(210, 25%, 7.8431%);
-  --card: hsl(180, 6.6667%, 97.0588%);
-  --card-foreground: hsl(210, 25%, 7.8431%);
+  --foreground: hsl(20, 14.3%, 4.1%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(20, 14.3%, 4.1%);
   --popover: hsl(0, 0%, 100%);
-  --popover-foreground: hsl(210, 25%, 7.8431%);
-  --primary-foreground: hsl(0, 0%, 100%);
-  --secondary-foreground: hsl(0, 0%, 100%);
-  --muted: hsl(240, 1.9608%, 90%);
-  --muted-foreground: hsl(210, 25%, 7.8431%);
-  --accent-foreground: hsl(0, 0%, 100%);
-  --destructive: hsl(356.3033, 90.5579%, 54.3137%);
-  --destructive-foreground: hsl(0, 0%, 100%);
-  --border: hsl(201.4286, 30.4348%, 90.9804%);
-  --input: hsl(200, 23.0769%, 97.4510%);
-  --ring: hsl(202.8169, 89.1213%, 53.1373%);
-  --radius: 0.5rem;
-  --font-sans: 'Inter', system-ui, sans-serif;
+  --popover-foreground: hsl(20, 14.3%, 4.1%);
+  --primary: hsl(24, 9.8%, 10%);
+  --primary-foreground: hsl(0, 0%, 98%);
+  --secondary: hsl(60, 4.8%, 95.9%);
+  --secondary-foreground: hsl(24, 9.8%, 10%);
+  --muted: hsl(60, 4.8%, 95.9%);
+  --muted-foreground: hsl(25, 5.3%, 44.7%);
+  --accent: hsl(60, 4.8%, 95.9%);
+  --accent-foreground: hsl(24, 9.8%, 10%);
+  --destructive: hsl(0, 84.2%, 60.2%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --border: hsl(20, 5.9%, 90%);
+  --input: hsl(20, 5.9%, 90%);
+  --ring: hsl(24, 5.7%, 82.9%);
+  --chart-1: hsl(12, 76%, 61%);
+  --chart-2: hsl(173, 58%, 39%);
+  --chart-3: hsl(197, 37%, 24%);
+  --chart-4: hsl(43, 74%, 66%);
+  --chart-5: hsl(27, 87%, 67%);
+  --radius: 0.75rem;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
 }
 
 .dark {
-  --background: hsl(0, 0%, 0%);
-  --foreground: hsl(200, 6.6667%, 91.1765%);
-  --card: hsl(228, 9.8039%, 10%);
-  --card-foreground: hsl(0, 0%, 85.0980%);
-  --popover: hsl(0, 0%, 0%);
-  --popover-foreground: hsl(200, 6.6667%, 91.1765%);
-  --muted: hsl(0, 0%, 9.4118%);
-  --muted-foreground: hsl(210, 3.3898%, 46.2745%);
-  --accent: hsl(205.7143, 70%, 7.8431%);
-  --accent-foreground: hsl(203.7736, 87.6033%, 52.5490%);
-  --border: hsl(210, 5.2632%, 14.9020%);
-  --input: hsl(207.6923, 27.6596%, 18.4314%);
+  --background: hsl(20, 14.3%, 4.1%);
+  --foreground: hsl(0, 0%, 95%);
+  --card: hsl(20, 14.3%, 4.1%);
+  --card-foreground: hsl(0, 0%, 95%);
+  --popover: hsl(20, 14.3%, 4.1%);
+  --popover-foreground: hsl(0, 0%, 95%);
+  --primary: hsl(0, 0%, 98%);
+  --primary-foreground: hsl(24, 9.8%, 10%);
+  --secondary: hsl(12, 6.5%, 15.1%);
+  --secondary-foreground: hsl(0, 0%, 98%);
+  --muted: hsl(12, 6.5%, 15.1%);
+  --muted-foreground: hsl(24, 5.4%, 63.9%);
+  --accent: hsl(12, 6.5%, 15.1%);
+  --accent-foreground: hsl(0, 0%, 98%);
+  --destructive: hsl(0, 62.8%, 30.6%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --border: hsl(12, 6.5%, 15.1%);
+  --input: hsl(12, 6.5%, 15.1%);
+  --ring: hsl(24, 5.7%, 82.9%);
+  --chart-1: hsl(220, 70%, 50%);
+  --chart-2: hsl(160, 60%, 45%);
+  --chart-3: hsl(30, 80%, 55%);
+  --chart-4: hsl(280, 65%, 60%);
+  --chart-5: hsl(340, 75%, 55%);
 }
 
 @layer base {
@@ -53,9 +70,9 @@
 
 /* Tenant-specific theming */
 [data-tenant] {
-  --primary: var(--tenant-primary, hsl(243.8863, 88.2845%, 53.1373%));
-  --secondary: var(--tenant-secondary, hsl(328.4894, 75.2000%, 50.9804%));
-  --accent: var(--tenant-accent, hsl(159.7826, 100%, 36.0784%));
+  --primary: var(--tenant-primary, hsl(24, 9.8%, 10%));
+  --secondary: var(--tenant-secondary, hsl(60, 4.8%, 95.9%));
+  --accent: var(--tenant-accent, hsl(60, 4.8%, 95.9%));
 }
 
 /* Animation utilities */

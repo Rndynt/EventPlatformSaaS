@@ -273,7 +273,7 @@ export function AdminTable({
                                 onClick={() => action.onClick(row)}
                                 className={action.variant === 'destructive' ? 'text-red-600' : ''}
                               >
-                                {IconComponent && <IconComponent className="mr-2" size={16} />}
+                                {IconComponent && <IconComponent size={16} />}
                                 {action.label}
                               </DropdownMenuItem>
                             );

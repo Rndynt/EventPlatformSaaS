@@ -200,171 +200,137 @@ export function AdminDashboard({ tenant }: AdminDashboardProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="flex items-center justify-center py-24">
         <div className="text-center">
           <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading dashboard...</p>
+          <p className="text-muted-foreground">Loading dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <nav className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-8">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                  <Settings className="text-white" size={20} />
-                </div>
-                <span className="text-xl font-bold text-gray-900">
-                  {tenant.name} Admin
-                </span>
-              </div>
-              
-              <div className="hidden md:flex space-x-6">
-                <Link href={`/admin/${tenant.slug}`} className="text-primary font-medium">
-                  Dashboard
-                </Link>
-                <Link href={`/admin/${tenant.slug}/events/create`} className="text-gray-600 hover:text-gray-900">
-                  Events
-                </Link>
-                <Link href="#" className="text-gray-600 hover:text-gray-900">
-                  Tickets
-                </Link>
-                <Link href="#" className="text-gray-600 hover:text-gray-900">
-                  Analytics
-                </Link>
-                <Link href={`/admin/${tenant.slug}/settings`} className="text-gray-600 hover:text-gray-900">
-                  Settings
-                </Link>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <Button className="bg-primary text-white" asChild>
-                <Link href={`/admin/${tenant.slug}/events/create`}>
-                  <Plus className="mr-2" size={16} />
-                  New Event
-                </Link>
-              </Button>
-              <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
-            </div>
-          </div>
+    <div className="space-y-8">
+      {/* Quick Actions */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-muted-foreground mt-1">
+            Welcome back! Here's what's happening with your events.
+          </p>
         </div>
-      </nav>
-
-      {/* Dashboard Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
-                Total Events
-              </CardTitle>
-              <Calendar className="h-4 w-4 text-gray-400" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-gray-900" data-testid="text-total-events">
-                {stats.totalEvents}
-              </div>
-              <div className="text-sm text-green-600 mt-2">
-                <span>+{stats.growthStats.events}% from last month</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
-                Registrations
-              </CardTitle>
-              <Users className="h-4 w-4 text-gray-400" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-gray-900" data-testid="text-total-registrations">
-                {stats.totalRegistrations.toLocaleString()}
-              </div>
-              <div className="text-sm text-green-600 mt-2">
-                <span>+{stats.growthStats.registrations}% from last month</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
-                Revenue
-              </CardTitle>
-              <DollarSign className="h-4 w-4 text-gray-400" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-gray-900" data-testid="text-total-revenue">
-                {new Intl.NumberFormat('en-US', {
-                  style: 'currency',
-                  currency: 'USD',
-                  minimumFractionDigits: 0
-                }).format(stats.totalRevenue)}
-              </div>
-              <div className="text-sm text-green-600 mt-2">
-                <span>+{stats.growthStats.revenue}% revenue growth</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
-                Avg. Rating
-              </CardTitle>
-              <Star className="h-4 w-4 text-gray-400" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-gray-900" data-testid="text-avg-rating">
-                {stats.avgRating.toFixed(1)}
-              </div>
-              <div className="text-sm text-gray-600 mt-2">
-                Based on recent feedback
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Events Table */}
+        <Button asChild>
+          <Link href={`/admin/${tenant.slug}/events/create`}>
+            <Plus className="mr-2" size={16} />
+            New Event
+          </Link>
+        </Button>
+      </div>
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
-          <CardHeader>
-            <CardTitle>Recent Events</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Events
+            </CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <AdminTable
-              data={events}
-              columns={eventColumns}
-              title=""
-              searchPlaceholder="Search events..."
-              onEdit={handleEditEvent}
-              onView={handleViewEvent}
-              onDelete={handleDeleteEvent}
-              onExport={handleExportEvents}
-              actions={[
-                {
-                  label: 'View Analytics',
-                  onClick: (event) => console.log('View analytics for', event.id),
-                  icon: BarChart3 as any
-                },
-                {
-                  label: 'Manage Tickets',
-                  onClick: (event) => console.log('Manage tickets for', event.id),
-                  icon: Ticket as any
-                }
-              ]}
-            />
+            <div className="text-3xl font-bold text-card-foreground" data-testid="text-total-events">
+              {stats.totalEvents}
+            </div>
+            <div className="text-sm text-primary mt-2">
+              <span>+{stats.growthStats.events}% from last month</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Registrations
+            </CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-card-foreground" data-testid="text-total-registrations">
+              {stats.totalRegistrations.toLocaleString()}
+            </div>
+            <div className="text-sm text-primary mt-2">
+              <span>+{stats.growthStats.registrations}% from last month</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Revenue
+            </CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-card-foreground" data-testid="text-total-revenue">
+              {new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 0
+              }).format(stats.totalRevenue)}
+            </div>
+            <div className="text-sm text-primary mt-2">
+              <span>+{stats.growthStats.revenue}% revenue growth</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Avg. Rating
+            </CardTitle>
+            <Star className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-card-foreground" data-testid="text-avg-rating">
+              {stats.avgRating.toFixed(1)}
+            </div>
+            <div className="text-sm text-muted-foreground mt-2">
+              Based on recent feedback
+            </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Events Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-card-foreground">Recent Events</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <AdminTable
+            data={events}
+            columns={eventColumns}
+            title=""
+            searchPlaceholder="Search events..."
+            onEdit={handleEditEvent}
+            onView={handleViewEvent}
+            onDelete={handleDeleteEvent}
+            onExport={handleExportEvents}
+            actions={[
+              {
+                label: 'View Analytics',
+                onClick: (event) => console.log('View analytics for', event.id),
+                icon: BarChart3 as any
+              },
+              {
+                label: 'Manage Tickets',
+                onClick: (event) => console.log('Manage tickets for', event.id),
+                icon: Ticket as any
+              }
+            ]}
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 }

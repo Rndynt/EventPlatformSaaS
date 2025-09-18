@@ -1,5 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import { resolveTenant } from '@/lib/tenant';
+import { AdminLayout } from '@/components/admin-layout';
 import { AdminDashboard } from '@/components/AdminDashboard';
 
 interface Props {
@@ -16,7 +17,11 @@ export default async function AdminTenantPage({ params }: Props) {
     notFound();
   }
 
-  return <AdminDashboard tenant={tenant} />;
+  return (
+    <AdminLayout tenant={tenant}>
+      <AdminDashboard tenant={tenant} />
+    </AdminLayout>
+  );
 }
 
 export async function generateMetadata({ params }: Props) {
