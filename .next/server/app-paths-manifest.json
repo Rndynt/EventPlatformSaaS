@@ -1,4 +1,4 @@
 {
-  "/[tenant]/webinar/[eventSlug]/page": "app/[tenant]/webinar/[eventSlug]/page.js",
-  "/login/page": "app/login/page.js"
+  "/page": "app/page.js",
+  "/[tenant]/webinar/[eventSlug]/page": "app/[tenant]/webinar/[eventSlug]/page.js"
 }
