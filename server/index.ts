@@ -1,68 +1,30 @@
-import express, { type Request, Response, NextFunction } from "express";
-import cookieParser from 'cookie-parser';
-import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
-import { setupNextJs } from "./next";
+// Simple bridge to start Next.js development server
+import { exec } from 'child_process';
+import { fileURLToPath } from 'url';
+import path from 'path';
 
-const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-app.use((req, res, next) => {
-  const start = Date.now();
-  const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
+console.log('🚀 Starting Next.js development server on port 3000...');
 
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
-
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-
-      log(logLine);
-    }
-  });
-
-  next();
+// Start Next.js in the project root
+const projectRoot = path.resolve(__dirname, '..');
+const nextProcess = exec('npx next dev -p 3000', {
+  cwd: projectRoot,
+  stdio: 'inherit',
+  env: { ...process.env, NODE_ENV: 'development' }
 });
 
-(async () => {
-  const server = await registerRoutes(app);
+// Forward all output
+nextProcess.stdout?.pipe(process.stdout);
+nextProcess.stderr?.pipe(process.stderr);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+// Handle process termination
+nextProcess.on('close', (code) => {
+  console.log(`Next.js process exited with code ${code}`);
+  process.exit(code || 0);
+});
 
-    res.status(status).json({ message });
-    throw err;
-  });
-
-  // Setup Next.js after registering all API routes
-  await setupNextJs(app);
-
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || '5000', 10);
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
-  });
-})();
+process.on('SIGTERM', () => nextProcess.kill());
+process.on('SIGINT', () => nextProcess.kill());
