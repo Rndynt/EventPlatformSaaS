@@ -28,6 +28,7 @@ export const tenants = pgTable("tenants", {
   slug: varchar("slug", { length: 100 }).notNull().unique(),
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }).notNull(),
+  tenantType: varchar("tenant_type", { length: 50 }).notNull().default("webinar"), // webinar, concerts, equipment_rental, wedding
   domains: jsonb("domains").$type<string[]>().default([]),
   theme: jsonb("theme").$type<{
     primaryColor: string;
