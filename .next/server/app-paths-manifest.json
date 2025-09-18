@@ -1,4 +1,8 @@
 {
+  "/api/v1/auth/route": "app/api/v1/auth/route.js",
+  "/api/v1/analytics/route": "app/api/v1/analytics/route.js",
+  "/page": "app/page.js",
   "/login/page": "app/login/page.js",
-  "/page": "app/page.js"
+  "/admin/[tenant]/page": "app/admin/[tenant]/page.js",
+  "/admin/[tenant]/events/create/page": "app/admin/[tenant]/events/create/page.js"
 }

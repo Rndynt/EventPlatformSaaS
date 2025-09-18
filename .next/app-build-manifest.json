@@ -20,6 +20,21 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/api/v1/auth/route.js"
+    ],
+    "/admin/[tenant]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/admin/[tenant]/page.js"
+    ],
+    "/api/v1/analytics/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/v1/analytics/route.js"
+    ],
+    "/admin/[tenant]/events/create/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/admin/[tenant]/events/create/page.js"
     ]
   }
 }
