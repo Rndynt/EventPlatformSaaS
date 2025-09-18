@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
       .where(eq(adminUsers.id, adminData.admin_users.id));
 
     // Generate JWT
-    const token = generateJWT({
+    const token = await generateJWT({
       userId: adminData.admin_users.id,
       tenantId: adminData.admin_users.tenantId,
       role: adminData.admin_users.role as string,
@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'No authentication token' }, { status: 401 });
     }
 
-    const payload = verifyJWT(token);
+    const payload = await verifyJWT(token);
     if (!payload) {
       return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 });
     }

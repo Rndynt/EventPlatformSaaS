@@ -1,7 +1,8 @@
-import jwt from 'jsonwebtoken';
+import { SignJWT, jwtVerify } from 'jose';
 import bcrypt from 'bcryptjs';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key';
+const secretKey = new TextEncoder().encode(JWT_SECRET);
 
 export interface JWTPayload {
   userId: string;
@@ -19,17 +20,21 @@ export async function verifyPassword(password: string, hashedPassword: string): 
   return bcrypt.compare(password, hashedPassword);
 }
 
-export function generateJWT(payload: JWTPayload): string {
-  return jwt.sign(payload, JWT_SECRET, {
-    expiresIn: '7d',
-    issuer: 'event-platform',
-  });
+export async function generateJWT(payload: JWTPayload): Promise<string> {
+  return await new SignJWT(payload)
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setIssuer('event-platform')
+    .setExpirationTime('7d')
+    .sign(secretKey);
 }
 
-export function verifyJWT(token: string): JWTPayload | null {
+export async function verifyJWT(token: string): Promise<JWTPayload | null> {
   try {
-    const payload = jwt.verify(token, JWT_SECRET) as JWTPayload;
-    return payload;
+    const { payload } = await jwtVerify(token, secretKey, {
+      issuer: 'event-platform',
+    });
+    return payload as JWTPayload;
   } catch (error) {
     console.error('JWT verification failed:', error);
     return null;

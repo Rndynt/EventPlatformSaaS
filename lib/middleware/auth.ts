@@ -24,9 +24,9 @@ export function getAuthToken(request: NextRequest): string | null {
   return null;
 }
 
-export function verifyAuthToken(token: string): AuthUser | null {
+export async function verifyAuthToken(token: string): Promise<AuthUser | null> {
   try {
-    const payload = verifyJWT(token);
+    const payload = await verifyJWT(token);
     if (!payload) {
       return null;
     }
@@ -43,7 +43,7 @@ export function verifyAuthToken(token: string): AuthUser | null {
   }
 }
 
-export function requireAuth(request: NextRequest): { user: AuthUser } | { error: NextResponse } {
+export async function requireAuth(request: NextRequest): Promise<{ user: AuthUser } | { error: NextResponse }> {
   const token = getAuthToken(request);
   
   if (!token) {
@@ -55,7 +55,7 @@ export function requireAuth(request: NextRequest): { user: AuthUser } | { error:
     };
   }
 
-  const user = verifyAuthToken(token);
+  const user = await verifyAuthToken(token);
   if (!user) {
     return { 
       error: NextResponse.json(
@@ -79,7 +79,7 @@ export function requireTenantAccess(authUser: AuthUser, tenantId: string): NextR
 }
 
 export function createAuthMiddleware() {
-  return (request: NextRequest) => {
+  return async (request: NextRequest) => {
     const { pathname } = request.nextUrl;
     
     // Skip auth for public routes
@@ -95,7 +95,7 @@ export function createAuthMiddleware() {
 
     // Require auth for admin routes
     if (pathname.startsWith('/admin')) {
-      const authResult = requireAuth(request);
+      const authResult = await requireAuth(request);
       
       if ('error' in authResult) {
         // Redirect to login page instead of returning JSON
