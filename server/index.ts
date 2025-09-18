@@ -6,13 +6,12 @@ import path from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-console.log('🚀 Starting Next.js development server on port 3000...');
+console.log('🚀 Starting Next.js development server on port 5000...');
 
 // Start Next.js in the project root
 const projectRoot = path.resolve(__dirname, '..');
-const nextProcess = exec('npx next dev -p 3000', {
+const nextProcess = exec('npx next dev -p 5000 -H 0.0.0.0', {
   cwd: projectRoot,
-  stdio: 'inherit',
   env: { ...process.env, NODE_ENV: 'development' }
 });
 
