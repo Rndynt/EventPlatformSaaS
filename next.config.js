@@ -21,6 +21,10 @@ const nextConfig = {
       },
     ]
   },
+  // Allow cross-origin requests for Replit development
+  experimental: {
+    allowedDevOrigins: ['127.0.0.1', '*.replit.dev'],
+  },
 }
 
 export default nextConfig;
