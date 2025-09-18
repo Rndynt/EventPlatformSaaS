@@ -5,13 +5,13 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Palette, Upload, Eye, Save } from 'lucide-react';
-import { Button } from '@/client/src/components/ui/button';
-import { Input } from '@/client/src/components/ui/input';
-import { Label } from '@/client/src/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/client/src/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/client/src/components/ui/select';
-import { Switch } from '@/client/src/components/ui/switch';
-import { useToast } from '@/client/src/hooks/use-toast';
+import { Button } from '@/lib/components/ui/button';
+import { Input } from '@/lib/components/ui/input';
+import { Label } from '@/lib/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/lib/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/lib/components/ui/select';
+import { Switch } from '@/lib/components/ui/switch';
+import { useToast } from '@/lib/hooks/use-toast';
 import type { Tenant } from '@/shared/schema';
 
 const themeSchema = z.object({

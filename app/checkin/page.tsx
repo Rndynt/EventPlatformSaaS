@@ -2,13 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { CheckinScanner } from '@/components/CheckinScanner';
-import { Button } from '@/client/src/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/client/src/components/ui/card';
-import { Input } from '@/client/src/components/ui/input';
-import { Label } from '@/client/src/components/ui/label';
-import { Badge } from '@/client/src/components/ui/badge';
+import { Button } from '@/lib/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/lib/components/ui/card';
+import { Input } from '@/lib/components/ui/input';
+import { Label } from '@/lib/components/ui/label';
+import { Badge } from '@/lib/components/ui/badge';
 import { QrCode, Users, Clock, Wifi, WifiOff } from 'lucide-react';
-import { useToast } from '@/client/src/hooks/use-toast';
+import { useToast } from '@/lib/hooks/use-toast';
 
 interface CheckinData {
   ticket: {

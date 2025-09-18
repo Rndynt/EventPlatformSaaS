@@ -2,15 +2,15 @@
 
 import React, { useState } from 'react';
 import { Download, FileText, Calendar } from 'lucide-react';
-import { Button } from '@/client/src/components/ui/button';
+import { Button } from '@/lib/components/ui/button';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
   DropdownMenuTrigger,
   DropdownMenuSeparator 
-} from '@/client/src/components/ui/dropdown-menu';
-import { useToast } from '@/client/src/hooks/use-toast';
+} from '@/lib/components/ui/dropdown-menu';
+import { useToast } from '@/lib/hooks/use-toast';
 
 interface ExportData {
   [key: string]: any;

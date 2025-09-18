@@ -5,14 +5,14 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Save, Globe, Mail, CreditCard } from 'lucide-react';
-import { Button } from '@/client/src/components/ui/button';
-import { Input } from '@/client/src/components/ui/input';
-import { Label } from '@/client/src/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/client/src/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/client/src/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/client/src/components/ui/select';
+import { Button } from '@/lib/components/ui/button';
+import { Input } from '@/lib/components/ui/input';
+import { Label } from '@/lib/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/lib/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/lib/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/lib/components/ui/select';
 import { ThemeEditor } from './ThemeEditor';
-import { useToast } from '@/client/src/hooks/use-toast';
+import { useToast } from '@/lib/hooks/use-toast';
 import type { Tenant } from '@/shared/schema';
 
 const settingsSchema = z.object({

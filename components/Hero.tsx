@@ -3,8 +3,8 @@
 import React from 'react';
 import Image from 'next/image';
 import { Calendar, Clock, Users, Globe, Video } from 'lucide-react';
-import { Button } from '@/client/src/components/ui/button';
-import { Badge } from '@/client/src/components/ui/badge';
+import { Button } from '@/lib/components/ui/button';
+import { Badge } from '@/lib/components/ui/badge';
 import { Countdown } from './Countdown';
 import type { Event, Tenant } from '@/shared/schema';
 

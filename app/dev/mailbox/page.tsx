@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/client/src/components/ui/card';
-import { Badge } from '@/client/src/components/ui/badge';
-import { Button } from '@/client/src/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/lib/components/ui/card';
+import { Badge } from '@/lib/components/ui/badge';
+import { Button } from '@/lib/components/ui/button';
 import { Mail, Trash2, Eye } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/client/src/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/lib/components/ui/dialog';
 
 interface DevEmail {
   id: string;

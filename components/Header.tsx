@@ -3,8 +3,8 @@
 import React from 'react';
 import Link from 'next/link';
 import { Menu, Rocket } from 'lucide-react';
-import { Button } from '@/client/src/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/client/src/components/ui/sheet';
+import { Button } from '@/lib/components/ui/button';
+import { Sheet, SheetContent, SheetTrigger } from '@/lib/components/ui/sheet';
 import type { Tenant } from '@/shared/schema';
 
 interface HeaderProps {

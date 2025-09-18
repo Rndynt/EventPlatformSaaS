@@ -2,10 +2,10 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Camera, Upload, AlertCircle } from 'lucide-react';
-import { Button } from '@/client/src/components/ui/button';
-import { Input } from '@/client/src/components/ui/input';
-import { Card, CardContent } from '@/client/src/components/ui/card';
-import { Badge } from '@/client/src/components/ui/badge';
+import { Button } from '@/lib/components/ui/button';
+import { Input } from '@/lib/components/ui/input';
+import { Card, CardContent } from '@/lib/components/ui/card';
+import { Badge } from '@/lib/components/ui/badge';
 
 interface CheckinScannerProps {
   onScan: (token: string) => void;

@@ -1,0 +1,115 @@
+You are an expert Next.js (App Router) engineer. You will refactor and run the repository below as a single Next.js monolith (frontend + backend API via Route Handlers). Do NOT scaffold a separate client app and DO NOT use Vite. Use TypeScript everywhere.
+
+Repository to open:
+- https://github.com/Rndynt/EventPlatformSaaS
+
+GOAL
+- Migrate to a single Next.js (App Router) app using TypeScript.
+- All backend endpoints must be moved into Next.js Route Handlers under `app/api/**/route.ts`.
+- One process only: `next dev` for development, `next build` + `next start` for production.
+- Keep or translate existing business logic from `server/` into reusable modules in `lib/` and call them from Route Handlers.
+
+CONSTRAINTS
+- Do NOT create a new “client/” app or any Vite project. If there is an existing `client/` or `vite.config.ts`, ignore them entirely unless absolutely needed, and prefer to remove/rename them with a clear Git commit message if they are unused.
+- Prefer the Next.js App Router directory `app/` with `layout.tsx`, server components by default, and client components only when necessary (`"use client"`).
+- Do not introduce a custom Node server (no Express/Fastify). Use only Next.js built-in server and Route Handlers.
+- Keep TypeScript strict where possible (`"strict": true`).
+- Ensure the project runs with a single command: `pnpm dev` or `npm run dev`.
+
+TASKS
+
+1) AUDIT & CLEANUP
+- Inspect the repo structure. Identify `app/` (Next.js App Router) and any `server/` Node code.
+- If `client/` and/or `vite.config.ts` exist and are not required, remove them. If keeping them would confuse the runner, remove or rename them (`client/` → `_client_unused/`) with a commit: "chore: remove legacy vite client to enforce Next.js monolith".
+- Ensure `next.config.js` exists and uses default runtime (Node.js), not "edge" unless necessary.
+
+2) DEPENDENCIES
+- Ensure dependencies include:
+  - next, react, react-dom
+  - typescript, @types/node
+  - eslint, @typescript-eslint/eslint-plugin, @typescript-eslint/parser
+  - zod (for request validation)
+  - dotenv (if needed for local dev)
+  - (Optional) prisma/drizzle if database exists; otherwise skip
+- Install with pnpm if present; otherwise npm is fine.
+
+3) TYPESCRIPT & LINT
+- Create or update `tsconfig.json` with:
+  - "target": "ES2022"
+  - "module": "ESNext"
+  - "jsx": "preserve"
+  - "strict": true
+  - "baseUrl": "."
+  - "paths": { "@/*": ["./*"] }
+  - "moduleResolution": "Bundler"
+  - "incremental": true
+- Add a minimal `.eslintrc.cjs` compatible with Next.js and TypeScript.
+- Add `prettier` optional; do not block if not requested.
+
+4) ENV MANAGEMENT
+- Create `.env.example` with placeholder variables used in the app (DB_URL, AUTH_SECRET, NEXT_PUBLIC_* etc).
+- Add a small utility: `lib/env.ts` that validates required envs at runtime using Zod and throws a clear error on missing required envs.
+
+5) BACKEND → ROUTE HANDLERS
+- For each existing API/endpoint in `server/`, create corresponding route handlers:
+  - Path scheme: `app/api/<resource>/route.ts` or nested `app/api/<resource>/<action>/route.ts`.
+  - Export `GET/POST/PATCH/DELETE` handlers as needed, returning `NextResponse.json`.
+  - Parse/validate inputs with Zod.
+  - Reuse business logic moved to `lib/services/*.ts`. DO NOT keep data logic inside route files.
+- Create a baseline health endpoint:
+  - `app/api/health/route.ts` → responds `{ ok: true, uptime: process.uptime(), env: "dev|prod" }`
+- If authentication was present in `server/`, add minimal auth middleware or handlers:
+  - Implement an `app/api/auth/route.ts` placeholder (or NextAuth if already used; otherwise create simple token/session stubs).
+  - Provide `lib/auth.ts` abstraction to read/write session (can be a TODO if not fully implemented).
+- If there are webhooks or long-running jobs, leave TODO notes and stubs in `app/api/webhooks/...` but keep the server monolithic (no extra process).
+
+6) FRONTEND (APP ROUTER)
+- Ensure `app/layout.tsx` and `app/page.tsx` exist.
+- Create minimal UI to call the health endpoint for verification:
+  - A small client component in `app/_components/HealthCheck.tsx` that fetches `/api/health` on mount and displays status.
+- If original pages exist, port them to App Router structure; prefer server components.
+
+7) SCRIPTS
+- Update `package.json`:
+  - "dev": "next dev -p 3000"
+  - "build": "next build"
+  - "start": "next start -p 3000"
+  - "lint": "eslint ."
+  - "typecheck": "tsc --noEmit"
+- If pnpm is used, ensure lockfile is consistent.
+
+8) .REPLIT & RUNNER
+- Configure Replit to run the app with a single command:
+  - If `.replit` exists, set `run = "pnpm dev"` (or `npm run dev`).
+  - Ensure the repl exposes port 3000.
+
+9) TESTS & DIAGNOSTICS (LIGHTWEIGHT)
+- Add a minimal API integration check script under `scripts/check.mjs` that fetches `http://localhost:3000/api/health` and logs result.
+- Optionally add `vitest` for unit tests of `lib/services/**`. If testing is heavy, add TODO markers.
+
+10) DEPLOY NOTES
+- Provide `README.md` with:
+  - How to run locally.
+  - How to configure env vars.
+  - How to build and start production.
+  - Netlify/Vercel quick deploy notes (App Router + Route Handlers supported by default).
+- If `netlify.toml` already exists, keep it compatible with Next 14+ (no custom server). If misconfigured, update to standard Next adapter.
+
+11) ACCEPTANCE CRITERIA
+- `pnpm dev` (or `npm run dev`) starts ONE Next.js server on port 3000.
+- Visiting `/` shows the app UI.
+- Visiting `/api/health` returns JSON: `{ ok: true, uptime: <number> }`.
+- No references to a separate Vite client or custom Node server remain.
+- Lint & typecheck pass: `pnpm lint` & `pnpm typecheck`.
+- README explains how to run and deploy.
+
+12) DELIVERABLES
+- Commit all changes with clear messages:
+  - "chore: remove legacy vite client and unify as Next.js monolith"
+  - "feat(api): migrate endpoints to app/api route handlers"
+  - "feat: health check and basic UI status component"
+  - "chore: add tsconfig/eslint/env validation"
+  - "docs: update README with run and deploy instructions"
+- Print a summary of files changed and the final command to run.
+
+Finally, RUN the app in development mode and print the local URL. Then call `/api/health` and display the JSON result in the console to verify.

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Clock, User } from 'lucide-react';
-import { Badge } from '@/client/src/components/ui/badge';
+import { Badge } from '@/lib/components/ui/badge';
 import type { Event } from '@/shared/schema';
 
 interface AgendaProps {

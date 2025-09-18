@@ -14,10 +14,10 @@ import {
   Search,
   Bell
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/client/src/components/ui/card';
-import { Button } from '@/client/src/components/ui/button';
-import { Input } from '@/client/src/components/ui/input';
-import { Badge } from '@/client/src/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/lib/components/ui/card';
+import { Button } from '@/lib/components/ui/button';
+import { Input } from '@/lib/components/ui/input';
+import { Badge } from '@/lib/components/ui/badge';
 import { AdminTable } from './AdminTable';
 import type { Tenant } from '@/shared/schema';
 

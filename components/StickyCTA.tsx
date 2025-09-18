@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/client/src/components/ui/button';
-import { useIsMobile } from '@/client/src/hooks/use-mobile';
+import { Button } from '@/lib/components/ui/button';
+import { useIsMobile } from '@/lib/hooks/use-mobile';
 import type { Event } from '@/shared/schema';
 
 interface StickyCTAProps {

@@ -2,8 +2,8 @@
 
 import React from 'react';
 import { Check, X } from 'lucide-react';
-import { Button } from '@/client/src/components/ui/button';
-import { Badge } from '@/client/src/components/ui/badge';
+import { Button } from '@/lib/components/ui/button';
+import { Badge } from '@/lib/components/ui/badge';
 import type { TicketType, Event, Tenant } from '@/shared/schema';
 
 interface PricingTiersProps {

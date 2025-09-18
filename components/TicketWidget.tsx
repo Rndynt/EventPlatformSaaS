@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Button } from '@/client/src/components/ui/button';
-import { Badge } from '@/client/src/components/ui/badge';
-import { Card, CardContent } from '@/client/src/components/ui/card';
+import { Button } from '@/lib/components/ui/button';
+import { Badge } from '@/lib/components/ui/badge';
+import { Card, CardContent } from '@/lib/components/ui/card';
 import { Minus, Plus, Users, Clock } from 'lucide-react';
 import type { TicketType } from '@/shared/schema';
 
