@@ -6,7 +6,7 @@ import path from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const port = process.env.PORT || '80';
+const port = process.env.PORT || '5000';
 console.log(`🚀 Starting Next.js development server on port ${port}...`);
 
 // Start Next.js in the project root
