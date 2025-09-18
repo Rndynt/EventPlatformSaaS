@@ -24,25 +24,29 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { email, password, tenantSlug } = loginSchema.parse(body);
 
-    // Find admin user
-    const adminQuery = db
-      .select()
+    // Find admin user with proper Drizzle query structure
+    const adminQuery = await db
+      .select({
+        adminUser: adminUsers,
+        tenant: tenants,
+      })
       .from(adminUsers)
       .innerJoin(tenants, eq(adminUsers.tenantId, tenants.id))
       .where(and(
         eq(adminUsers.email, email),
         eq(tenants.slug, tenantSlug),
         eq(adminUsers.isActive, true)
-      ));
+      ))
+      .limit(1);
 
-    const [adminData] = await adminQuery.limit(1);
+    const [adminData] = adminQuery;
 
-    if (!adminData || !adminData.admin_users.isActive) {
+    if (!adminData || !adminData.adminUser.isActive) {
       return NextResponse.json({ error: 'Invalid credentials or account inactive' }, { status: 401 });
     }
 
     // Verify password
-    const isValid = await verifyPassword(password, adminData.admin_users.password);
+    const isValid = await verifyPassword(password, adminData.adminUser.password);
     
     if (!isValid) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
@@ -52,28 +56,28 @@ export async function POST(request: NextRequest) {
     await db
       .update(adminUsers)
       .set({ lastLoginAt: new Date() })
-      .where(eq(adminUsers.id, adminData.admin_users.id));
+      .where(eq(adminUsers.id, adminData.adminUser.id));
 
     // Generate JWT
     const token = await generateJWT({
-      userId: adminData.admin_users.id,
-      tenantId: adminData.admin_users.tenantId,
-      role: adminData.admin_users.role as string,
-      email: adminData.admin_users.email,
+      userId: adminData.adminUser.id,
+      tenantId: adminData.adminUser.tenantId,
+      role: adminData.adminUser.role as string,
+      email: adminData.adminUser.email,
     });
 
     // Create response with user data
     const response = NextResponse.json({
       success: true,
       user: {
-        id: adminData.admin_users.id,
-        email: adminData.admin_users.email,
-        name: adminData.admin_users.name,
-        role: adminData.admin_users.role,
+        id: adminData.adminUser.id,
+        email: adminData.adminUser.email,
+        name: adminData.adminUser.name,
+        role: adminData.adminUser.role,
         tenant: {
-          id: adminData.tenants.id,
-          slug: adminData.tenants.slug,
-          name: adminData.tenants.name,
+          id: adminData.tenant.id,
+          slug: adminData.tenant.slug,
+          name: adminData.tenant.name,
         },
       },
       token, // Include token for client-side storage

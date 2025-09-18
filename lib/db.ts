@@ -8,7 +8,18 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-const client = neon(process.env.DATABASE_URL);
+// For development, disable SSL certificate verification to handle self-signed certs
+if (process.env.NODE_ENV === 'development') {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+}
+
+// Configure neon client for Neon databases
+const client = neon(process.env.DATABASE_URL, {
+  fetchOptions: {
+    cache: 'no-store',
+  },
+});
+
 export const db = drizzle(client, { schema });
 
 // Helper function to test database connection
