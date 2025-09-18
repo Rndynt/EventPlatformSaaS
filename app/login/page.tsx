@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/lib/components/ui/button';
 import { Input } from '@/lib/components/ui/input';
 import { Label } from '@/lib/components/ui/label';
@@ -12,9 +12,30 @@ import { useToast } from '@/lib/hooks/use-toast';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Check for error messages from URL params
+  useEffect(() => {
+    const errorParam = searchParams.get('error');
+    if (errorParam) {
+      switch (errorParam) {
+        case 'access_denied':
+          setError('Access denied. You do not have permission to access this tenant.');
+          break;
+        case 'tenant_not_found':
+          setError('Tenant not found. Please check the URL and try again.');
+          break;
+        case 'server_error':
+          setError('Server error occurred. Please try again later.');
+          break;
+        default:
+          setError('An error occurred. Please try again.');
+      }
+    }
+  }, [searchParams]);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -42,9 +63,15 @@ export default function LoginPage() {
       }
 
       if (data.success) {
-        // Store user data in localStorage
-        localStorage.setItem('auth-user', JSON.stringify(data.user));
-        localStorage.setItem('auth-token', data.token);
+        // Only store non-sensitive user profile data in localStorage
+        // JWT token is handled via HttpOnly cookie for security
+        localStorage.setItem('auth-user', JSON.stringify({
+          id: data.user.id,
+          name: data.user.name,
+          email: data.user.email,
+          role: data.user.role,
+          tenant: data.user.tenant,
+        }));
 
         toast({
           title: 'Login Successful',

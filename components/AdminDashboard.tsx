@@ -353,12 +353,12 @@ export function AdminDashboard({ tenant }: AdminDashboardProps) {
                 {
                   label: 'View Analytics',
                   onClick: (event) => console.log('View analytics for', event.id),
-                  icon: BarChart3
+                  icon: BarChart3 as any
                 },
                 {
                   label: 'Manage Tickets',
                   onClick: (event) => console.log('Manage tickets for', event.id),
-                  icon: Ticket
+                  icon: Ticket as any
                 }
               ]}
             />
